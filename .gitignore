@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env/
+env/
+
+# IDE settings
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# TensorFlow / PyTorch
+checkpoint/
+*.ckpt
+*.pth
+*.pt
+
+# Large data files
+data/*.pkl
+data/*.pickle
+data/*.csv
+
+# Logs
+*.log
+
+# Cache
+.cache/
+huggingface/
