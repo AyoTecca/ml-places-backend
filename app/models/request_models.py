@@ -1,7 +1,11 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class SearchRequest(BaseModel):
     query: str
-    top_k: int = 5
-    transliterate: bool = False      
-    use_llm_explanations: bool = True 
+    top_k: Optional[int] = 10
+    transliterate: Optional[bool] = False
+
+
+class ExplainRequest(BaseModel):
+    place_id: str

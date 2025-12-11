@@ -35,3 +35,7 @@ data/*.csv
 # Cache
 .cache/
 huggingface/
+
+.env
+*.env
+

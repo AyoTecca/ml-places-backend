@@ -1,41 +1,53 @@
 import os
 import pickle
 import numpy as np
-from sentence_transformers import SentenceTransformer
+import pandas as pd
+import logging
+_logger = logging.getLogger("loader")
 
-def load_resources():
-    print("Loading embedding model...")
-    model = SentenceTransformer("all-MiniLM-L6-v2")
+APP_DIR = os.path.dirname(os.path.dirname(__file__))          
+PROJECT_ROOT = os.path.dirname(APP_DIR)                       
+DATA_DIRS = [
+    os.path.join(APP_DIR, "data"),
+    os.path.join(PROJECT_ROOT, "data"),
+]
 
-    print("Loading DataFrame pickle...")
+def find_pickle(preferred="places_index_with_reviews.pkl"):
+    for folder in DATA_DIRS:
+        p = os.path.join(folder, preferred)
+        if os.path.exists(p):
+            return p
+    for folder in DATA_DIRS:
+        for alt in ("places_index_with_categories.pkl", "places_index.pkl"):
+            path = os.path.join(folder, alt)
+            if os.path.exists(path):
+                return path
+    return None
 
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    candidates = [
-        os.path.join(base_dir, "data", "places_index_with_reviews.pkl"),
-        os.path.join(base_dir, "data", "places_index_with_categories.pkl"),
-        os.path.join(base_dir, "data", "places_index.pkl"),
-    ]
 
-    pickle_path = None
-    for c in candidates:
-        if os.path.exists(c):
-            pickle_path = c
-            break
-
-    if not pickle_path:
-        raise FileNotFoundError("No places_index pickle found. Tried: " + ", ".join(candidates))
-
-    print("Looking for pickle at:", pickle_path)
-
-    with open(pickle_path, "rb") as f:
+def load_resources(pickle_name: str | None = None):
+    model = None
+    embeddings = None
+    places_index = None
+    if pickle_name is None:
+        pickle_name = find_pickle()
+    if pickle_name is None:
+        raise FileNotFoundError("No places pickle found in data/")
+    _logger.info(f"Looking for pickle at: {pickle_name}")
+    with open(pickle_name, "rb") as f:
         df = pickle.load(f)
-
-    print("Pickle loaded. Type:", type(df))
-
-    embeddings = np.vstack(df["embedding"].values)
-    places_index = df.drop(columns=["embedding"])
-
-    print("+ Loaded embeddings:", embeddings.shape)
-    print("+ Loaded index:", len(places_index))
-
+    if not isinstance(df, pd.DataFrame):
+        raise ValueError("Loaded pickle is not a DataFrame")
+    if "embedding" in df.columns:
+        arrs = df["embedding"].values
+        try:
+            embeddings = np.vstack(arrs)
+        except Exception:
+            embeddings = np.array(list(arrs.tolist()))
+    else:
+        raise KeyError("No 'embedding' column in places index")
+    places_index = df.reset_index(drop=True)
+    _logger.info(f"Pickle loaded. Type: {type(places_index)}")
+    _logger.info(f"+ Loaded embeddings: {embeddings.shape}")
+    _logger.info(f"+ Loaded index: {len(places_index)}")
     return model, embeddings, places_index
