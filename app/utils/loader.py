@@ -10,14 +10,25 @@ def load_resources():
     print("Loading DataFrame pickle...")
 
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    pickle_path = os.path.join(base_dir, "data", "places_index_with_categories.pkl")
+    candidates = [
+        os.path.join(base_dir, "data", "places_index_with_reviews.pkl"),
+        os.path.join(base_dir, "data", "places_index_with_categories.pkl"),
+        os.path.join(base_dir, "data", "places_index.pkl"),
+    ]
+
+    pickle_path = None
+    for c in candidates:
+        if os.path.exists(c):
+            pickle_path = c
+            break
+
+    if not pickle_path:
+        raise FileNotFoundError("No places_index pickle found. Tried: " + ", ".join(candidates))
 
     print("Looking for pickle at:", pickle_path)
 
-    if not os.path.exists(pickle_path):
-        raise FileNotFoundError(f"Pickle file not found at: {pickle_path}")
-
-    df = pickle.load(open(pickle_path, "rb"))
+    with open(pickle_path, "rb") as f:
+        df = pickle.load(f)
 
     print("Pickle loaded. Type:", type(df))
 

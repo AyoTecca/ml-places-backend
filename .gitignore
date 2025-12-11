@@ -27,6 +27,7 @@ checkpoint/
 data/*.pkl
 data/*.pickle
 data/*.csv
+*.csv
 
 # Logs
 *.log
