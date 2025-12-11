@@ -7,10 +7,8 @@ from app.utils.loader import load_resources
 
 app = FastAPI(title="Places Semantic Search API")
 
-# Load model and embeddings once at startup
 model, embeddings, places_index = load_resources()
 
-# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
