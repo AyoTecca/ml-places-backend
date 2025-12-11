@@ -62,7 +62,7 @@ Produce:
 3. Compare rating vs sentiment (if sentiment is lower → warn user)
 4. Provide a risk/warning section if reviews imply issues.
 5. Keep everything factual. No hallucinations.
-6. Keep answer under 8–10 sentences.
+6. Keep answer under 4-5 sentences.
 """
 
 
