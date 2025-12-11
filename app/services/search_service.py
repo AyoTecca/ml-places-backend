@@ -266,9 +266,6 @@ Write a clear, helpful explanation (3–4 sentences) describing:
         "reviews are more positive than ratings."
     )
 
-    # =====================================================
-    #            LLM QUERY SUMMARY (NEW LOGIC)
-    # =====================================================
     query_summary = {
         "user_intent": req.query,
         "avg_similarity": avg_similarity,

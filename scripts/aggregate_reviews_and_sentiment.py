@@ -15,15 +15,13 @@ if USE_TRANSFORMERS:
         print("transformers not available:", e)
         USE_TRANSFORMERS = False
 
-# ---------- CONFIG ----------
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR = os.path.join(PROJECT_ROOT, "data")
-FINAL_CSV = os.path.join(PROJECT_ROOT, "final_with.csv")  # your full raw dataset
-PLACES_PICKLE_IN = os.path.join(DATA_DIR, "places_index_with_categories.pkl") # existing index with embeddings AND categories
-PLACES_PICKLE_OUT = os.path.join(DATA_DIR, "places_index_with_reviews.pkl")  # output
+FINAL_CSV = os.path.join(PROJECT_ROOT, "final_with.csv")  
+PLACES_PICKLE_IN = os.path.join(DATA_DIR, "places_index_with_categories.pkl") 
+PLACES_PICKLE_OUT = os.path.join(DATA_DIR, "places_index_with_reviews.pkl")  
 MAX_REVIEWS_PER_PLACE = 10
-SENTIMENT_BATCH_SIZE = 16  # tune for memory
-# ----------------------------
+SENTIMENT_BATCH_SIZE = 16  
 
 def load_datasets():
     print("Loading CSV:", FINAL_CSV)
@@ -41,11 +39,9 @@ def aggregate_reviews(df: pd.DataFrame, max_reviews: int = 10):
     We assume df has 'place_id', 'review_text' and 'review_datetime' (optionally).
     We keep most recent reviews if review_datetime exists.
     """
-    # ensure columns exist
     if "place_id" not in df.columns or "review_text" not in df.columns:
         raise ValueError("final_with.csv must contain 'place_id' and 'review_text' columns")
 
-    # if review_datetime exists, parse and sort
     if "review_datetime" in df.columns:
         df["review_datetime_parsed"] = pd.to_datetime(df["review_datetime"], errors="coerce")
         df_sorted = df.sort_values("review_datetime_parsed", ascending=False)
@@ -68,12 +64,9 @@ def aggregate_reviews(df: pd.DataFrame, max_reviews: int = 10):
 def prepare_sentiment_pipeline():
     if not USE_TRANSFORMERS:
         return None
-    # Choose a multilingual sentiment model with reasonable speed/quality.
-    # 'nlptown/bert-base-multilingual-uncased-sentiment' returns 1..5 star labels; it's fast enough and multilingual.
     try:
         pipe = pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment", device=-1)
     except Exception:
-        # fallback to a different model
         pipe = pipeline("sentiment-analysis", model="cardiffnlp/twitter-roberta-base-sentiment", device=-1)
     return pipe
 
@@ -94,14 +87,12 @@ def score_reviews_sentiment(pipe, texts: List[str]) -> float:
         preds = pipe(batch, truncation=True)
         for p in preds:
             lab = p.get("label", "")
-            # try parse a numeric label (nlptown -> '1 star'..'5 stars')
             import re
             m = re.search(r"(\d)", str(lab))
             if m:
                 val = int(m.group(1))
                 scores.append((val - 1) / 4.0)  # 1..5 -> 0..1
                 continue
-            # otherwise map POSITIVE/NEGATIVE or probability
             if "POSITIVE" in lab.upper():
                 scores.append(float(p.get("score", 1.0)))
             elif "NEGATIVE" in lab.upper():
@@ -127,9 +118,7 @@ def main():
         else:
             print("Sentiment pipeline ready.")
 
-    # For each place in places_df, add 'reviews' (list) and compute 'sentiment' numeric (0..1) optionally
     places_df = places_df.copy()
-    # Make sure index is range
     if "place_id" not in places_df.columns:
         raise ValueError("places_index.pkl must contain 'place_id' column.")
 
@@ -147,7 +136,6 @@ def main():
             place_count_with_reviews += 1
         reviews_col.append(texts)
 
-        # compute sentiment
         sent_score = None
         sent_label = None
         if texts and pipe is not None:
@@ -162,13 +150,11 @@ def main():
                     else:
                         sent_label = "negative"
             except Exception as e:
-                # do not fail whole run for a few errors
                 print("Sentiment scoring failed for", pid, ":", repr(e))
                 sent_score = None
         sentiment_col.append(sent_score)
         sentiment_label_col.append(sent_label)
 
-    # assign columns
     places_df["reviews"] = reviews_col
     places_df["sentiment"] = sentiment_col
     places_df["sentiment_label"] = sentiment_label_col
