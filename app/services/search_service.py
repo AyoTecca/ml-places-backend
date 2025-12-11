@@ -1,10 +1,9 @@
 import time
 import logging
 import numpy as np
-from typing import List, Dict, Any, Optional
 from sklearn.metrics.pairwise import cosine_similarity
 from app.utils.loader import load_resources
-from app.services.llm_service import explain_place_async
+from app.services.llm_service import llm_explain_place
 
 _logger = logging.getLogger("search_service")
 _model, EMBEDDINGS, PLACES = load_resources()
@@ -88,11 +87,9 @@ def get_place_details(place_id: str, include_reviews=True, include_nearby_full=T
     return details
 
 
-async def explain_place(place_id: str, user_query: str):
-    details = get_place_details(place_id, include_reviews=True)
-    explanation, ms = await explain_place_async(details, user_query)
+async def build_llm_explanation(place_details: dict) -> dict:
+    text, ms = await llm_explain_place(place_details)
     return {
-        "place_id": place_id,
-        "ai_explanation": explanation,
+        "explanation": text,
         "explain_ms": ms
     }
